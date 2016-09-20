@@ -11,7 +11,7 @@ public class UIManager : MonoBehaviour {
 
 	public void StartGame() {
 		//Application.LoadLevel("RocketMouse");
-		SceneManager.LoadScene ("SeaScene");
+		SceneManager.LoadScene ("DistrictScene");
 	}
 
 	public void OpenSettings() {
