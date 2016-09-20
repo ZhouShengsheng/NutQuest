@@ -7,12 +7,19 @@ using System.Collections.Generic;
  */
 public class GeneratorScript : MonoBehaviour {
 
-	public GameObject[] availableSeas;
-	public List<GameObject> currentSeas;
-
+	// Screen.
 	private float screenHeightInPoints;
 	private float screenWidthInPoints;
 
+	// Sea.
+	public GameObject[] availableSeas;
+	public List<GameObject> currentSeas;
+	private float seaWidth = 0;
+
+	public GameObject[] nutPrefabs;
+	public GameObject[] obstaclePrefabs;
+
+	// To be removed.
 	public GameObject[] availableObjects;
 	public List<GameObject> objects;
 	
@@ -22,10 +29,8 @@ public class GeneratorScript : MonoBehaviour {
 	public float objectsMinY = -1.4f;
 	public float objectsMaxY = 1.4f;
 	
-	public float objectsMinRotation = -45.0f;
-	public float objectsMaxRotation = 45.0f;
-
-	private float seaWidth = 0;
+//	public float objectsMinRotation = -45.0f;
+//	public float objectsMaxRotation = 45.0f;
 
 
 	// Use this for initialization
@@ -99,8 +104,8 @@ public class GeneratorScript : MonoBehaviour {
 		float randomY = Random.Range(objectsMinY, objectsMaxY);
 		obj.transform.position = new Vector3(objectPositionX,randomY,0); 
 
-		float rotation = Random.Range(objectsMinRotation, objectsMaxRotation);
-		obj.transform.rotation = Quaternion.Euler(Vector3.forward * rotation);
+//		float rotation = Random.Range(objectsMinRotation, objectsMaxRotation);
+//		obj.transform.rotation = Quaternion.Euler(Vector3.forward * rotation);
 
 		objects.Add(obj);            
 	}
@@ -113,7 +118,10 @@ public class GeneratorScript : MonoBehaviour {
 
 		List<GameObject> objectsToRemove = new List<GameObject>();
 		
-		foreach (var obj in objects) {
+		foreach (GameObject obj in objects) {
+			if (obj == null) {
+				continue;
+			}
 			float objX = obj.transform.position.x;
 
 			farthestObjectX = Mathf.Max(farthestObjectX, objX);

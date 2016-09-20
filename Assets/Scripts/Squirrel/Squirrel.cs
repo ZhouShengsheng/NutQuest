@@ -53,8 +53,11 @@ public class Squirrel : MonoBehaviour {
 			print ("collided with coin.");
 			CollectNut(collider);
 		} else if (collider.gameObject.CompareTag ("Border")) {
-			print ("collided with Border.");
+			print ("collided with border.");
 			GetComponent<Rigidbody2D> ().velocity = new Vector2 (forwardSpeed, 0);
+		} else if (collider.gameObject.CompareTag ("Obstacle")) {
+			print ("collided with obstacle.");
+
 		}
 	}
 
