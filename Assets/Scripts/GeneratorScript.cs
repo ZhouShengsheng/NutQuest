@@ -2,15 +2,18 @@
 using System.Collections;
 using System.Collections.Generic;
 
+/**
+ * Script to generate backgrounds, nuts and obstacles.
+ */
 public class GeneratorScript : MonoBehaviour {
 
-	public GameObject[] availableRooms;
-	
-	public List<GameObject> currentRooms;
-	
+	public GameObject[] availableSeas;
+	public List<GameObject> currentSeas;
+
+	private float screenHeightInPoints;
 	private float screenWidthInPoints;
 
-	public GameObject[] availableObjects;    
+	public GameObject[] availableObjects;
 	public List<GameObject> objects;
 	
 	public float objectsMinDistance = 5.0f;    
@@ -22,156 +25,108 @@ public class GeneratorScript : MonoBehaviour {
 	public float objectsMinRotation = -45.0f;
 	public float objectsMaxRotation = 45.0f;
 
-	private float roomWidth = 0;
+	private float seaWidth = 0;
 
 
 	// Use this for initialization
 	void Start () {
-		float height = 2.0f * Camera.main.orthographicSize;
-		screenWidthInPoints = height * Camera.main.aspect;
-	}
-	
-	// Update is called once per frame
-	void Update () {
-	
+		screenHeightInPoints = 2.0f * Camera.main.orthographicSize;
+		screenWidthInPoints = screenHeightInPoints * Camera.main.aspect;
+		print ("screenHeightInPoints: " + screenHeightInPoints);
+		print ("screenWidthInPoints: " + screenWidthInPoints);
 	}
 
 	void FixedUpdate () {
-		
-		GenerateRoomIfRequred();
-
+		GenerateSeaIfRequred();
 		GenerateObjectsIfRequired();    
 	}
 
+	void AddSea(float farhtestSeaEndX) {
+		int randomSeaIndex = Random.Range(0, availableSeas.Length);
+		GameObject sea = (GameObject)Instantiate(availableSeas[randomSeaIndex]);
+		float seaWidth = sea.transform.FindChild("floor").localScale.x;
+		float seaCenter = farhtestSeaEndX + seaWidth * 0.5f;
+		sea.transform.position = new Vector3(seaCenter, 0, 0);
 
-	void AddRoom(float farhtestRoomEndX) {
-		//1
-		int randomRoomIndex = Random.Range(0, availableRooms.Length);
-		
-		//2
-		GameObject room = (GameObject)Instantiate(availableRooms[randomRoomIndex]);
-		
-		//3
-		float roomWidth = room.transform.FindChild("floor").localScale.x;
-		
-		//4
-		float roomCenter = farhtestRoomEndX + roomWidth * 0.5f;
-		
-		//5
-		room.transform.position = new Vector3(roomCenter, 0, 0);
-		
-		//6
-		currentRooms.Add(room);			
+		currentSeas.Add(sea);			
 	} 
 
-	void GenerateRoomIfRequred() {
-		//1
-		List<GameObject> roomsToRemove = new List<GameObject>();
-		
-		//2
-		bool addRooms = true;        
-		
-		//3
+	void GenerateSeaIfRequred() {
+		List<GameObject> seasToRemove = new List<GameObject>();
+		bool addSeas = true;        
 		float playerX = transform.position.x;
-		
-		//4
-		float removeRoomX = playerX - screenWidthInPoints;        
-		
-		//5
-		float addRoomX = playerX + screenWidthInPoints;
-		
-		//6
-		float farthestRoomEndX = 0;
+		float removeSeaX = playerX - screenWidthInPoints;        
+		float addSeaX = playerX + screenWidthInPoints;
+		float farthestSeaEndX = 0;
 
-		//print ("currentRooms.Count: " + currentRooms.Count);
-		foreach(var room in currentRooms) {
-			//7
-			//float roomWidth = room.transform.FindChild("floor").localScale.x;
-			//print("room.transform.FindChild(\"Floor\"): " + room.transform.FindChild("Floor"));
-
-			if (roomWidth - 0.0f == 0.0f) {
-				Transform floor = room.transform.FindChild ("floor");
+		//print ("currentSeas.Count: " + currentSeas.Count);
+		foreach(var sea in currentSeas) {
+			if (seaWidth - 0.0f == 0.0f) {
+				Transform floor = sea.transform.FindChild ("floor");
 				if (floor == null) {
 					return;
 				}
-				roomWidth = floor.localScale.x;
+				seaWidth = floor.localScale.x;
 			}
-			//float roomWidth = floor.localScale.x;
-			float roomStartX = room.transform.position.x - (roomWidth * 0.5f);    
-			float roomEndX = roomStartX + roomWidth;                            
+			//float seaWidth = floor.localScale.x;
+			float seaStartX = sea.transform.position.x - (seaWidth * 0.5f);    
+			float seaEndX = seaStartX + seaWidth;                            
+
+			if (seaStartX > addSeaX)
+				addSeas = false;
 			
-			//8
-			if (roomStartX > addRoomX)
-				addRooms = false;
+			if (seaEndX < removeSeaX)
+				seasToRemove.Add(sea);
 			
-			//9
-			if (roomEndX < removeRoomX)
-				roomsToRemove.Add(room);
-			
-			//10
-			farthestRoomEndX = Mathf.Max(farthestRoomEndX, roomEndX);
+			farthestSeaEndX = Mathf.Max(farthestSeaEndX, seaEndX);
 		}
-		
-		//11
-		foreach(var room in roomsToRemove) {
-			currentRooms.Remove(room);
-			Destroy(room);            
+
+		foreach(var sea in seasToRemove) {
+			currentSeas.Remove(sea);
+			Destroy(sea);
 		}
-		
-		//12
-		if (addRooms)
-			AddRoom(farthestRoomEndX);
+
+		if (addSeas)
+			AddSea(farthestSeaEndX);
 	}
 
 	void AddObject(float lastObjectX) {
-		//1
 		int randomIndex = Random.Range(0, availableObjects.Length);
-		
-		//2
+
 		GameObject obj = (GameObject)Instantiate(availableObjects[randomIndex]);
-		
-		//3
+
 		float objectPositionX = lastObjectX + Random.Range(objectsMinDistance, objectsMaxDistance);
 		float randomY = Random.Range(objectsMinY, objectsMaxY);
 		obj.transform.position = new Vector3(objectPositionX,randomY,0); 
-		
-		//4
+
 		float rotation = Random.Range(objectsMinRotation, objectsMaxRotation);
 		obj.transform.rotation = Quaternion.Euler(Vector3.forward * rotation);
-		
-		//5
+
 		objects.Add(obj);            
 	}
 
 	void GenerateObjectsIfRequired() {
-		//1
 		float playerX = transform.position.x;        
 		float removeObjectsX = playerX - screenWidthInPoints;
 		float addObjectX = playerX + screenWidthInPoints;
 		float farthestObjectX = 0;
-		
-		//2
+
 		List<GameObject> objectsToRemove = new List<GameObject>();
 		
 		foreach (var obj in objects) {
-			//3
 			float objX = obj.transform.position.x;
-			
-			//4
+
 			farthestObjectX = Mathf.Max(farthestObjectX, objX);
-			
-			//5
+
 			if (objX < removeObjectsX)            
 				objectsToRemove.Add(obj);
 		}
-		
-		//6
+
 		foreach (var obj in objectsToRemove) {
 			objects.Remove(obj);
 			Destroy(obj);
 		}
-		
-		//7
+
 		if (farthestObjectX < addObjectX)
 			AddObject(farthestObjectX);
 	}

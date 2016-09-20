@@ -17,7 +17,6 @@ public class Squirrel : MonoBehaviour {
 	// Nuts.
 	private uint nutsColleted = 0;
 	public Text nutsColletedLabel;
-	public Texture2D nutIconTexture;
 	public AudioClip nutCollectSound;
 
 	// Animation.
@@ -49,8 +48,13 @@ public class Squirrel : MonoBehaviour {
 
 	// Collision detection method (for unity 2D).
 	void OnTriggerEnter2D(Collider2D collider) {
+		print ("collider: " + collider);
 		if (collider.gameObject.CompareTag ("Coins")) {
+			print ("collided with coin.");
 			CollectNut(collider);
+		} else if (collider.gameObject.CompareTag ("Border")) {
+			print ("collided with Border.");
+			GetComponent<Rigidbody2D> ().velocity = new Vector2 (forwardSpeed, 0);
 		}
 	}
 
