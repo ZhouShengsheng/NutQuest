@@ -21,4 +21,8 @@ public class LevelScene : MonoBehaviour {
 	public void OnDistrictsTapped() {
 		SceneManager.LoadScene ("DistrictScene");
 	}
+
+	public void OnLevelTapped(int level) {
+		SceneManager.LoadScene ("SeaScene");
+	}
 }

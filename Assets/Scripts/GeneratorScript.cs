@@ -90,7 +90,7 @@ public class GeneratorScript : MonoBehaviour {
 			//print("room.transform.FindChild(\"Floor\"): " + room.transform.FindChild("Floor"));
 
 			if (roomWidth - 0.0f == 0.0f) {
-				Transform floor = room.transform.FindChild ("Floor");
+				Transform floor = room.transform.FindChild ("floor");
 				if (floor == null) {
 					return;
 				}
