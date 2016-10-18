@@ -7,7 +7,7 @@ using System.Collections;
  * Script to controll squirrel.
  * 
  */
-public class Squirrel : MonoBehaviour {
+public class SquirrelController : MonoBehaviour {
 
 	// Movements.
 	public float forwardSpeed = 3.0f;

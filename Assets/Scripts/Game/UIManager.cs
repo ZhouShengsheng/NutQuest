@@ -9,6 +9,10 @@ public class UIManager : MonoBehaviour {
 	public Animator contentPanel;
 	public Animator gearImage;
 
+	// Use this for initialization
+	void Start () {
+	}
+
 	public void StartGame() {
 		SceneManager.LoadScene ("DistrictScene");
 
