@@ -49,8 +49,8 @@ public class SquirrelController : MonoBehaviour {
 	// Collision detection method (for unity 2D).
 	void OnTriggerEnter2D(Collider2D collider) {
 		print ("collider: " + collider);
-		if (collider.gameObject.CompareTag ("Coins")) {
-			print ("collided with coin.");
+		if (collider.gameObject.CompareTag ("NutNormal")) {
+			print ("collided with normal nut.");
 			CollectNut(collider);
 		} else if (collider.gameObject.CompareTag ("Border")) {
 			print ("collided with border.");
