@@ -37,29 +37,33 @@ public class DistrictScene : MonoBehaviour {
 		District sea = districtManager.seaDistrict;
 		txtSeaPoints.text = string.Format ("{0} Points", sea.points);
 		changeLevelImages (imgSeaLevels, sea);
+		btnSea.onClick.AddListener (() => onDistrictTapped("Sea"));
 
 		District foreast = districtManager.seaDistrict;
+		btnForeast.onClick.RemoveAllListeners ();
 		if (foreast.unlocked) {
 			txtForeastPoints.text = string.Format ("{0} Points", foreast.points);
 			changeLevelImages (imgForeastLevels, foreast);
 			btnForeast.image.overrideSprite = polygonGreenImg;
+			btnForeast.onClick.AddListener (() => onDistrictTapped("Foreast"));
 		} else {
 			txtForeastPoints.text = "Locked";
 			btnForeast.interactable = false;
 			btnForeast.image.overrideSprite = polygonGrayImg;
 		}
 	}
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
 
-	public void OnMainMenuTapped() {
+	public void onMainMenuTapped() {
 		SceneManager.LoadScene ("MenuScene");
 	}
 
-	public void OnDistrictTapped(int districtNumber) {
-		SceneManager.LoadScene ("LevelScene");
+	public void onDistrictTapped(string districtName) {
+		switch (districtName) {
+			case "Sea": {
+				SceneManager.LoadScene ("LevelScene");
+				break;
+			}
+		}
+
 	}
 }

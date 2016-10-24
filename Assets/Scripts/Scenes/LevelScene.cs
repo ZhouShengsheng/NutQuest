@@ -80,9 +80,11 @@ public class LevelScene : MonoBehaviour {
 			}
 
 			Text txtInfo = btnLevel.transform.Find ("Txt_Info").gameObject.GetComponent<Text>();
+			btnLevel.onClick.RemoveAllListeners ();
 			if (l.unlocked) {
 				txtInfo.text = "Tap to start!";
 				btnLevel.interactable = true;
+				btnLevel.onClick.AddListener (() => onLevelTapped(l.number));
 			} else {
 				txtInfo.text = "Locked";
 				btnLevel.interactable = false;
@@ -95,11 +97,11 @@ public class LevelScene : MonoBehaviour {
 	
 	}
 
-	public void OnDistrictsTapped() {
+	public void onDistrictsTapped() {
 		SceneManager.LoadScene ("DistrictScene");
 	}
 
-	public void OnLevelTapped(int level) {
+	public void onLevelTapped(int level) {
 		SceneManager.LoadScene ("SeaScene");
 	}
 }
