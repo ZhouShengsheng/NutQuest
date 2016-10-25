@@ -452,9 +452,13 @@ public class SeaScene : MonoBehaviour {
 
 	public void restartGame() {
 		SceneManager.LoadScene (SceneManager.GetActiveScene ().name);
+		MusicManager.Instance.changeSpeed (1);
+		MusicManager.Instance.resume ();
 	}
 
 	public void exit() {
 		SceneManager.LoadScene ("LevelScene");
+		MusicManager.Instance.changeSpeed (1);
+		MusicManager.Instance.resume ();
 	}
 }

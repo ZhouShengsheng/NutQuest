@@ -8,7 +8,6 @@ public class LevelManager : Singleton<LevelManager> {
 
 	public string currentDistrict = "Sea";
 	public int currentLevel = 0;
-
 	public static int levelCounts = 5;
 
 
@@ -23,7 +22,7 @@ public class LevelManager : Singleton<LevelManager> {
 			if (unlocked == -1) {
 				l.unlocked = (l.number == 1);
 			} else {
-				l.unlocked = false;
+				l.unlocked = unlocked > 0;
 			}
 			if (l.number == 1) {
 				l.unlocked = true;
@@ -37,11 +36,11 @@ public class LevelManager : Singleton<LevelManager> {
 		for (int i = 0; i < levelCounts; i++) {
 			Level l = new Level ();
 			l.number = i + 1;
-			int unlocked = PlayerPrefs.GetInt ("sea_" + l.number + "_unlocked", -1);
+			int unlocked = PlayerPrefs.GetInt ("foreast_" + l.number + "_unlocked", -1);
 			if (unlocked == -1) {
 				l.unlocked = (l.number == 1);
 			} else {
-				l.unlocked = false;
+				l.unlocked = unlocked > 0;
 			}
 			if (l.number == 1) {
 				l.unlocked = true;
@@ -71,7 +70,7 @@ public class LevelManager : Singleton<LevelManager> {
 	 * 	Called on level completed.
 	 */
 	public void levelCompleted(int points) {
-		Level level;
+		Level level = null;
 		if (currentDistrict.Equals ("Sea")) {
 			level = seaLevels [currentLevel-1];
 		} else if (currentDistrict.Equals ("Foreast")) {
@@ -89,7 +88,8 @@ public class LevelManager : Singleton<LevelManager> {
 				nextLevel.unlocked = true;
 			}
 			save ();
-			DistrictManager.Instance.levelCompleted (currentDistrict, totalPointsForDistrict(currentDistrict));
+			DistrictManager.Instance.levelCompleted (currentDistrict, 
+				totalPointsForDistrict(currentDistrict), totalUnlockedLevelsForDistrict(currentDistrict));
 		}
 	}
 
@@ -107,6 +107,24 @@ public class LevelManager : Singleton<LevelManager> {
 			totalPoints += levels [i].points;
 		}
 		return totalPoints;
+	}
+
+	public int totalUnlockedLevelsForDistrict(string district) {
+		Level[] levels = null;
+		if (district.Equals ("Sea")) {
+			levels = seaLevels;
+		} else if (district.Equals ("Foreast")) {
+			levels = foreastLevels;
+		} else {
+			return 0;
+		}
+		int totalUnlockedLevels = 0;
+		for (int i = 0; i < levelCounts; i++) {
+			if (levels [i].unlocked) {
+				totalUnlockedLevels++;
+			}
+		}
+		return totalUnlockedLevels;
 	}
 
 	void Start() {

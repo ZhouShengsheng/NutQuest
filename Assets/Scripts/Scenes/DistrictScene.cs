@@ -39,13 +39,14 @@ public class DistrictScene : MonoBehaviour {
 		changeLevelImages (imgSeaLevels, sea);
 		btnSea.onClick.AddListener (() => onDistrictTapped("Sea"));
 
-		District foreast = districtManager.seaDistrict;
+		District foreast = districtManager.foreastDistrict;
 		btnForeast.onClick.RemoveAllListeners ();
 		if (foreast.unlocked) {
 			txtForeastPoints.text = string.Format ("{0} Points", foreast.points);
 			changeLevelImages (imgForeastLevels, foreast);
 			btnForeast.image.overrideSprite = polygonGreenImg;
 			btnForeast.onClick.AddListener (() => onDistrictTapped("Foreast"));
+			btnForeast.interactable = true;
 		} else {
 			txtForeastPoints.text = "Locked";
 			btnForeast.interactable = false;
@@ -58,12 +59,7 @@ public class DistrictScene : MonoBehaviour {
 	}
 
 	public void onDistrictTapped(string districtName) {
-		switch (districtName) {
-			case "Sea": {
-				SceneManager.LoadScene ("LevelScene");
-				break;
-			}
-		}
-
+		LevelManager.Instance.currentDistrict = districtName;
+		SceneManager.LoadScene ("LevelScene");
 	}
 }

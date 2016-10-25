@@ -39,14 +39,16 @@ public class DistrictManager : Singleton<DistrictManager> {
 	/**
 	 * 	Called on level completed.
 	 */
-	public void levelCompleted(string district, int totalPoints) {
+	public void levelCompleted(string district, int points, int unlockedLevels) {
 		if (district.Equals ("Sea")) {
-			seaDistrict.points = totalPoints;
-			if (totalPoints >= unlockDistrictPoints) {
+			seaDistrict.points = points;
+			if (points >= unlockDistrictPoints) {
 				foreastDistrict.unlocked = true;
 			}
+			seaDistrict.unlockedLevels = unlockedLevels;
 		} else if (district.Equals ("Foreast")) {
-			foreastDistrict.points = totalPoints;
+			foreastDistrict.points = points;
+			foreastDistrict.unlockedLevels = unlockedLevels;
 		}
 		save ();
 	}
