@@ -38,8 +38,8 @@ public class SeaScene : MonoBehaviour {
 	public float beatInterval = 2;	// Interval between two beats.
 	private int beatCountsPerSea;	// Equals seaWidth/beatInterval.
 
-	// Objects to be destroyed.
-	public List<GameObject> objectsToBeDestroyed;
+	// Nuts and obstacles.
+	public List<GameObject> objects;
 
 	public float objectsMinDistance = 5.0f;    
 	public float objectsMaxDistance = 10.0f;
@@ -90,7 +90,6 @@ public class SeaScene : MonoBehaviour {
 
 	void FixedUpdate () {
 		moveSea();
-		GenerateObjectsIfRequired();
 	}
 
 	void Update () {
@@ -122,6 +121,7 @@ public class SeaScene : MonoBehaviour {
 			seas.Add (preSea);
 
 			moveBeats ();
+			removeObjects ();
 		}			
 	}
 
@@ -140,6 +140,7 @@ public class SeaScene : MonoBehaviour {
 		for (int i = beatCountsPerSea*2; i < totalBeats; i++) {
 			GameObject beat = beats [i];
 			beat.transform.position = new Vector2(rightSeaX + (i - beatCountsPerSea*2)*beatInterval, 0);
+			addObjects (beat);
 		}
 	}
 
@@ -153,6 +154,7 @@ public class SeaScene : MonoBehaviour {
 			beat.transform.position = new Vector2(rightX + (i+1)*beatInterval, 0);
 			beats.RemoveAt(0);
 			beats.Add (beat);
+			addObjects (beat);
 		}
 
 	}
@@ -169,59 +171,48 @@ public class SeaScene : MonoBehaviour {
 		}
 	}
 
-	void AddObject(float lastObjectX) {
-		int randomThre = Random.Range (1, 101);
-		GameObject obj = null;
-		if (randomThre <= normalNutThre) {
-			obj = (GameObject)Instantiate (nutPrefabs [0]);
-		} else if (randomThre <= fastNutThre) {
-			obj = (GameObject)Instantiate (nutPrefabs [1]);
-		} else if (randomThre <= slowNutThre) {
-			obj = (GameObject)Instantiate (nutPrefabs [2]);
-		} else if (randomThre <= obstacleThre) {
-			int randomIndex = Random.Range (0, obstaclePrefabs.Length);
-			obj = (GameObject)Instantiate (obstaclePrefabs [randomIndex]);
-		} else {
-			obj = (GameObject)Instantiate (nutPrefabs [0]);
+	void addObjects(GameObject beat) {
+		float addX = beat.transform.position.x;
+		int number = Random.Range (0, 4);
+		for (int i = 0; i < number; i++) {
+			int randomThre = Random.Range (1, 101);
+			GameObject newObj = null;
+			if (randomThre <= normalNutThre) {
+				newObj = (GameObject)Instantiate (nutPrefabs [0]);
+			} else if (randomThre <= fastNutThre) {
+				newObj = (GameObject)Instantiate (nutPrefabs [1]);
+			} else if (randomThre <= slowNutThre) {
+				newObj = (GameObject)Instantiate (nutPrefabs [2]);
+			} else if (randomThre <= obstacleThre) {
+				int randomIndex = Random.Range (0, obstaclePrefabs.Length);
+				newObj = (GameObject)Instantiate (obstaclePrefabs [randomIndex]);
+			} else {
+				newObj = (GameObject)Instantiate (nutPrefabs [0]);
+			}
+
+			float randomY = Random.Range(objectsMinY, objectsMaxY);
+			newObj.transform.position = new Vector3(addX,randomY,0); 
+
+			objects.Add(newObj);
 		}
-
-		float objectPositionX = lastObjectX + Random.Range(objectsMinDistance, objectsMaxDistance);
-		float randomY = Random.Range(objectsMinY, objectsMaxY);
-		obj.transform.position = new Vector3(objectPositionX,randomY,0); 
-
-		//		float rotation = Random.Range(objectsMinRotation, objectsMaxRotation);
-		//		obj.transform.rotation = Quaternion.Euler(Vector3.forward * rotation);
-
-		objectsToBeDestroyed.Add(obj);
 	}
 
-	void GenerateObjectsIfRequired() {
-		float playerX = transform.position.x;        
-		float removeObjectsX = playerX - screenWidthInPoints;
-		float addObjectX = playerX + screenWidthInPoints;
-		float farthestObjectX = 0;
+	/**
+	 * 	Remove left objects.
+	 */
+	void removeObjects() {
+		float leftSeaX = seas [0].transform.position.x;
 
-		List<GameObject> objectsToRemove = new List<GameObject>();
-
-		foreach (GameObject obj in objectsToBeDestroyed) {
+		int totalCount = objects.Count;
+		for (int i = 0; i < totalCount; i++) {
+			GameObject obj = objects [0];
 			if (obj == null) {
-				continue;
+				objects.Remove (obj);
+			} else if (obj.transform.position.x < leftSeaX) {
+				objects.Remove (obj);
+				Destroy (obj);
 			}
-			float objX = obj.transform.position.x;
-
-			farthestObjectX = Mathf.Max(farthestObjectX, objX);
-
-			if (objX < removeObjectsX)            
-				objectsToRemove.Add(obj);
 		}
-
-		foreach (var obj in objectsToRemove) {
-			objectsToBeDestroyed.Remove(obj);
-			Destroy(obj);
-		}
-
-		if (farthestObjectX < addObjectX)
-			AddObject(farthestObjectX);
 	}
 
 	// Collision detection method (for unity 2D).
