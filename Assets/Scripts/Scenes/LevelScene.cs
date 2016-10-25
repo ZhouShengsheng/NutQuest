@@ -102,6 +102,7 @@ public class LevelScene : MonoBehaviour {
 	}
 
 	public void onLevelTapped(int level) {
+		LevelManager.Instance.currentLevel = level;
 		SceneManager.LoadScene ("SeaScene");
 	}
 }

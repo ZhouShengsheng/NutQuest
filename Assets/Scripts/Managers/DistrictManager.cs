@@ -7,6 +7,9 @@ public class DistrictManager : Singleton<DistrictManager> {
 	public District seaDistrict;
 	public District foreastDistrict;
 
+	// Points to unlock next district.
+	public static int unlockDistrictPoints = 6;
+
 
 	// Persistence.
 	private void load() {
@@ -31,6 +34,21 @@ public class DistrictManager : Singleton<DistrictManager> {
 		PlayerPrefs.SetInt ("foreast_unlocked", foreastDistrict.unlocked ? 1 : 0);
 		PlayerPrefs.SetInt ("foreast_unlockedLevels", foreastDistrict.unlockedLevels);
 		PlayerPrefs.SetInt ("foreast_points", foreastDistrict.points);
+	}
+
+	/**
+	 * 	Called on level completed.
+	 */
+	public void levelCompleted(string district, int totalPoints) {
+		if (district.Equals ("Sea")) {
+			seaDistrict.points = totalPoints;
+			if (totalPoints >= unlockDistrictPoints) {
+				foreastDistrict.unlocked = true;
+			}
+		} else if (district.Equals ("Foreast")) {
+			foreastDistrict.points = totalPoints;
+		}
+		save ();
 	}
 
 	void Start() {

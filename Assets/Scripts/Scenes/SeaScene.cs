@@ -438,10 +438,13 @@ public class SeaScene : MonoBehaviour {
 			txtTitle.text = "Level completed!";
 			if (nutsColleted >= goldenLevelNuts) {	// Golden.
 				imgMedal.sprite = medalGoldenImg;
+				LevelManager.Instance.levelCompleted (3);
 			} else if (nutsColleted >= silverLevelNuts) {	// Silver.
 				imgMedal.sprite = medalSilverImg;
+				LevelManager.Instance.levelCompleted (2);
 			} else if (nutsColleted >= bronzeLevelNuts) {	// Bronze.
 				imgMedal.sprite = medalBronzeImg;
+				LevelManager.Instance.levelCompleted (1);
 			}
 		}
 		restartDialog.SetActive (true);
