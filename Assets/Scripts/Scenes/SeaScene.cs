@@ -62,6 +62,8 @@ public class SeaScene : MonoBehaviour {
 	Animator squirrelAnimator;
 
 	// Controller.
+	public GameObject pauseDialog;
+	private bool isGamePaused = false;
 	public GameObject restartDialog;
 	private bool isGameOver = false;
 	public static int bronzeLevelNuts = 60;
@@ -92,6 +94,7 @@ public class SeaScene : MonoBehaviour {
 		print ("obstacleThre: " + obstacleThre);
 
 		squirrelAnimator = GetComponent<Animator>();
+		pauseDialog.SetActive (false);
 		restartDialog.SetActive (false);
 
 		float speed = upDown ? upDownSpeed : -upDownSpeed;
@@ -189,12 +192,15 @@ public class SeaScene : MonoBehaviour {
 
 	void updateSquirrelSpeed() {
 		Rigidbody2D body = GetComponent<Rigidbody2D> ();
-		if (collidedBorder) {
+		if (isGamePaused) {
+			body.velocity = new Vector2 (0, 0);
+		} else if (collidedBorder) {
 			body.velocity = new Vector2 (forwardSpeed * speedFactor, 0);
 		} else {
 			float speed = upDown ? upDownSpeed : -upDownSpeed;
 			body.velocity = new Vector2 (forwardSpeed * speedFactor, speed * speedFactor);
 		}
+		MusicManager.Instance.changeSpeed (speedFactor);
 	}
 
 	/**
@@ -300,18 +306,18 @@ public class SeaScene : MonoBehaviour {
 
 	// Collision detection method (for unity 2D).
 	void OnTriggerEnter2D(Collider2D collider) {
-		//		print ("collider: " + collider);
+//		print ("collider: " + collider);
 		if (collider.gameObject.tag.StartsWith ("Nut")) {
-			//			print ("Collided with normal nut.");
+//			print ("Collided with normal nut.");
 			collectNut(collider, collider.gameObject.tag);
 		} else if (collider.gameObject.CompareTag ("Border")) {
-			//			print ("Collided with border.");
+//			print ("Collided with border.");
 			collidedBorder = true;
 			updateSquirrelSpeed ();
 		} else if (collider.gameObject.tag.StartsWith("Obstacle")) {
 			hitObstacle ();
 		} else if (collider.gameObject.CompareTag ("Beat")) {
-			//			print ("Collided with beat.");
+//			print ("Collided with beat.");
 			onBeat = true;
 		}
 	}
@@ -348,7 +354,7 @@ public class SeaScene : MonoBehaviour {
 		Destroy(nutCollider.gameObject);
 		AudioSource.PlayClipAtPoint(nutCollectSound, transform.position);
 		updateNutsCollectedlabel ();
-		//		print ("nutTag: " + nutTag);
+//		print ("nutTag: " + nutTag);
 		if (nutTag.Equals ("NutFast")) {
 			if (speedFactor == speedUpFactor) {
 				return;
@@ -376,6 +382,20 @@ public class SeaScene : MonoBehaviour {
 
 	void updateNutsCollectedlabel() {
 		nutsColletedLabel.text = nutsColleted.ToString ();
+	}
+
+	public void pauseGame() {
+		isGamePaused = true;
+		updateSquirrelSpeed ();
+		pauseDialog.SetActive (true);
+		MusicManager.Instance.pause ();
+	}
+
+	public void resumeGame() {
+		isGamePaused = false;
+		updateSquirrelSpeed ();
+		pauseDialog.SetActive (false);
+		MusicManager.Instance.resume ();
 	}
 
 	/**
