@@ -25,6 +25,9 @@ public class LevelManager : Singleton<LevelManager> {
 			} else {
 				l.unlocked = false;
 			}
+			if (l.number == 1) {
+				l.unlocked = true;
+			}
 			l.points = PlayerPrefs.GetInt ("sea_" + l.number + "_points", 0);
 			seaLevels [i] = l;
 		}
@@ -39,6 +42,9 @@ public class LevelManager : Singleton<LevelManager> {
 				l.unlocked = (l.number == 1);
 			} else {
 				l.unlocked = false;
+			}
+			if (l.number == 1) {
+				l.unlocked = true;
 			}
 			l.points = PlayerPrefs.GetInt ("foreast_" + l.number + "_points", 0);
 			foreastLevels [i] = l;
@@ -65,13 +71,25 @@ public class LevelManager : Singleton<LevelManager> {
 	 * 	Called on level completed.
 	 */
 	public void levelCompleted(int points) {
+		Level level;
 		if (currentDistrict.Equals ("Sea")) {
-			Level level = seaLevels [currentLevel-1];
-			if (points > level.points) {
-				level.points = points;
-				save ();
-				DistrictManager.Instance.levelCompleted (currentDistrict, totalPointsForDistrict(currentDistrict));
+			level = seaLevels [currentLevel-1];
+		} else if (currentDistrict.Equals ("Foreast")) {
+			level = foreastLevels [currentLevel-1];
+		} 
+		if (points > level.points) {
+			level.points = points;
+			if (currentLevel < levelCounts) {
+				Level nextLevel = null;
+				if (currentDistrict.Equals ("Sea")) {
+					nextLevel = seaLevels [currentLevel];
+				} else if (currentDistrict.Equals ("Foreast")) {
+					nextLevel = foreastLevels [currentLevel];
+				}
+				nextLevel.unlocked = true;
 			}
+			save ();
+			DistrictManager.Instance.levelCompleted (currentDistrict, totalPointsForDistrict(currentDistrict));
 		}
 	}
 
