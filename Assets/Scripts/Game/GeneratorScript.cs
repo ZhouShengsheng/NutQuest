@@ -12,8 +12,7 @@ public class GeneratorScript : MonoBehaviour {
 	private float screenWidthInPoints;
 
 	// Sea.
-	public GameObject[] availableSeas;
-	public List<GameObject> currentSeas;
+	public List<GameObject> seas;
 	private float seaWidth = 0;
 
 	public GameObject[] nutPrefabs;
@@ -42,58 +41,60 @@ public class GeneratorScript : MonoBehaviour {
 	}
 
 	void FixedUpdate () {
-		GenerateSeaIfRequred();
+		addSea ();
 		GenerateObjectsIfRequired();    
 	}
 
-	void AddSea(float farhtestSeaEndX) {
-		int randomSeaIndex = Random.Range(0, availableSeas.Length);
-		GameObject sea = (GameObject)Instantiate(availableSeas[randomSeaIndex]);
-		float seaWidth = sea.transform.FindChild("floor").localScale.x;
-		float seaCenter = farhtestSeaEndX + seaWidth * 0.5f;
-		sea.transform.position = new Vector3(seaCenter, 0, 0);
-
-		currentSeas.Add(sea);			
-	} 
-
-	void GenerateSeaIfRequred() {
-		List<GameObject> seasToRemove = new List<GameObject>();
-		bool addSeas = true;        
-		float playerX = transform.position.x;
-		float removeSeaX = playerX - screenWidthInPoints;        
-		float addSeaX = playerX + screenWidthInPoints;
-		float farthestSeaEndX = 0;
-
-		//print ("currentSeas.Count: " + currentSeas.Count);
-		foreach(var sea in currentSeas) {
-			if (seaWidth - 0.0f == 0.0f) {
-				Transform floor = sea.transform.FindChild ("floor");
-				if (floor == null) {
-					return;
-				}
-				seaWidth = floor.localScale.x;
-			}
-			//float seaWidth = floor.localScale.x;
-			float seaStartX = sea.transform.position.x - (seaWidth * 0.5f);    
-			float seaEndX = seaStartX + seaWidth;                            
-
-			if (seaStartX > addSeaX)
-				addSeas = false;
-			
-			if (seaEndX < removeSeaX)
-				seasToRemove.Add(sea);
-			
-			farthestSeaEndX = Mathf.Max(farthestSeaEndX, seaEndX);
-		}
-
-		foreach(var sea in seasToRemove) {
-			currentSeas.Remove(sea);
-			Destroy(sea);
-		}
-
-		if (addSeas)
-			AddSea(farthestSeaEndX);
+	void addSea() {
+		GameObject preSea = seas [0];
+		GameObject currentSea = seas [1];
+		float seaCenterX = currentSea.transform.position.x + seaWidth * 0.5f;
+		float seaRightX = currentSea.transform.position.x + seaWidth;
+		if (transform.position.x > seaCenterX) {
+			preSea.transform.position = new Vector3(seaRightX, 0, 0);
+			seas.Remove (preSea);
+			seas.Add (preSea);
+		}			
 	}
+
+//	void GenerateSeaIfRequred() {
+//		List<GameObject> seasToRemove = new List<GameObject>();
+//		bool addSeas = true;        
+//		float playerX = transform.position.x;
+//		float removeSeaX = playerX - screenWidthInPoints;        
+//		float addSeaX = playerX + screenWidthInPoints;
+//		float farthestSeaEndX = 0;
+//
+//		//print ("currentSeas.Count: " + currentSeas.Count);
+//		foreach(var sea in seas) {
+//			if (seaWidth - 0.0f == 0.0f) {
+//				Transform floor = sea.transform.FindChild ("floor");
+//				if (floor == null) {
+//					return;
+//				}
+//				seaWidth = floor.localScale.x;
+//			}
+//			//float seaWidth = floor.localScale.x;
+//			float seaStartX = sea.transform.position.x - (seaWidth * 0.5f);    
+//			float seaEndX = seaStartX + seaWidth;                            
+//
+//			if (seaStartX > addSeaX)
+//				addSeas = false;
+//			
+//			if (seaEndX < removeSeaX)
+//				seasToRemove.Add(sea);
+//			
+//			farthestSeaEndX = Mathf.Max(farthestSeaEndX, seaEndX);
+//		}
+//
+//		foreach(var sea in seasToRemove) {
+//			seas.Remove(sea);
+//			Destroy(sea);
+//		}
+//
+//		if (addSeas)
+//			AddSea(farthestSeaEndX);
+//	}
 
 	void AddObject(float lastObjectX) {
 		int randomIndex = Random.Range(0, availableObjects.Length);
