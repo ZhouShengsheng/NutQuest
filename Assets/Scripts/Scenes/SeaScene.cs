@@ -1,4 +1,6 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -22,9 +24,6 @@ public class SeaScene : MonoBehaviour {
 	private float screenHeightInPoints;
 	private float screenWidthInPoints;
 
-	// Squirrel.
-	public GameObject squirrel;
-
 	// Sea.
 	public List<GameObject> seas;
 	private float seaWidth = 0;
@@ -32,8 +31,15 @@ public class SeaScene : MonoBehaviour {
 	public GameObject[] nutPrefabs;
 	public GameObject[] obstaclePrefabs;
 
-	// To be removed.
-	public List<GameObject> objects;
+	// Beat.
+	public GameObject beatPrefab;
+	private List<GameObject> beats;
+	public float beatOffset = 5;	// Offset between first beat and left border.
+	public float beatInterval = 2;	// Interval between two beats.
+	private int beatCountsPerSea;	// Equals seaWidth/beatInterval.
+
+	// Objects to be destroyed.
+	public List<GameObject> objectsToBeDestroyed;
 
 	public float objectsMinDistance = 5.0f;    
 	public float objectsMaxDistance = 10.0f;
@@ -41,8 +47,22 @@ public class SeaScene : MonoBehaviour {
 	public float objectsMinY = -1.4f;
 	public float objectsMaxY = 1.4f;
 
-	//	public float objectsMinRotation = -45.0f;
-	//	public float objectsMaxRotation = 45.0f;
+	// Squirrel movements.
+	public float forwardSpeed = 3.0f;
+	public float upDownSpeed = 3.0f;
+	private bool upDown = true;	// true: up, false: down
+	private bool onBeat = false;	// Squirrel can only change direction on beat.
+
+	// Nuts.
+	private uint nutsColleted = 0;
+	public Text nutsColletedLabel;
+	public AudioClip nutCollectSound;
+
+	// Animation.
+	Animator squirrelAnimator;
+
+	// Controller.
+	public GameObject restartDialog;
 
 
 	// Use this for initialization
@@ -60,11 +80,21 @@ public class SeaScene : MonoBehaviour {
 		print ("fastNutThre: " + fastNutThre);
 		print ("slowNutThre: " + slowNutThre);
 		print ("obstacleThre: " + obstacleThre);
+
+		squirrelAnimator = GetComponent<Animator>();
+		restartDialog.SetActive (false);
+
+		float speed = upDown ? upDownSpeed : -upDownSpeed;
+		GetComponent<Rigidbody2D> ().velocity = new Vector2 (forwardSpeed, speed);
 	}
 
 	void FixedUpdate () {
 		moveSea();
-		GenerateObjectsIfRequired();    
+		GenerateObjectsIfRequired();
+	}
+
+	void Update () {
+		moveSquirrel ();
 	}
 
 	/**
@@ -79,15 +109,64 @@ public class SeaScene : MonoBehaviour {
 				return;
 			}
 			seaWidth = floor.localScale.x;
+			beatCountsPerSea = (int)(seaWidth / beatInterval);
 			print ("seaWidth: " + seaWidth);
+			print ("beatCountsPerScreen: " + beatCountsPerSea);
+			initBeats ();
 		}
 		float seaCenterX = currentSea.transform.position.x + seaWidth * 0.5f;
 		float seaRightX = currentSea.transform.position.x + seaWidth;
-		if (squirrel.transform.position.x > seaCenterX) {
-			preSea.transform.position = new Vector3(seaRightX + seaWidth, 0, 0);
+		if (transform.position.x > seaCenterX) {
+			preSea.transform.position = new Vector2(seaRightX + seaWidth, 0);
 			seas.Remove (preSea);
 			seas.Add (preSea);
+
+			moveBeats ();
 		}			
+	}
+
+	void initBeats() {
+		beats = new List<GameObject> ();
+		int totalBeats = beatCountsPerSea * 3;
+		float rightSeaX = seas [2].transform.position.x;
+		for (int i = 0; i < totalBeats; i++) {
+			GameObject beat = GameObject.Instantiate (beatPrefab);
+			beats.Add (beat);
+		}
+		for (int i = 0; i < beatCountsPerSea*2; i++) {
+			GameObject beat = beats [i];
+			beat.transform.position = new Vector2(-(rightSeaX + i*beatInterval), 0);
+		}
+		for (int i = beatCountsPerSea*2; i < totalBeats; i++) {
+			GameObject beat = beats [i];
+			beat.transform.position = new Vector2(rightSeaX + (i - beatCountsPerSea*2)*beatInterval, 0);
+		}
+	}
+
+	/**
+	 * 	Move left beats to right positions.
+	 */
+	void moveBeats() {
+		float rightX = beats [beats.Count-1].transform.position.x;
+		for (int i = 0; i < beatCountsPerSea; i++) {
+			GameObject beat = beats [0];
+			beat.transform.position = new Vector2(rightX + (i+1)*beatInterval, 0);
+			beats.RemoveAt(0);
+			beats.Add (beat);
+		}
+
+	}
+
+	void moveSquirrel() {
+		// Get is tapped.
+		bool tapped = Input.GetButtonUp("Fire1");
+
+		if (tapped && onBeat) {
+			onBeat = false;
+			upDown = !upDown;
+			float speed = upDown ? upDownSpeed : -upDownSpeed;
+			GetComponent<Rigidbody2D> ().velocity = new Vector2 (forwardSpeed, speed);
+		}
 	}
 
 	void AddObject(float lastObjectX) {
@@ -113,7 +192,7 @@ public class SeaScene : MonoBehaviour {
 		//		float rotation = Random.Range(objectsMinRotation, objectsMaxRotation);
 		//		obj.transform.rotation = Quaternion.Euler(Vector3.forward * rotation);
 
-		objects.Add(obj);
+		objectsToBeDestroyed.Add(obj);
 	}
 
 	void GenerateObjectsIfRequired() {
@@ -124,7 +203,7 @@ public class SeaScene : MonoBehaviour {
 
 		List<GameObject> objectsToRemove = new List<GameObject>();
 
-		foreach (GameObject obj in objects) {
+		foreach (GameObject obj in objectsToBeDestroyed) {
 			if (obj == null) {
 				continue;
 			}
@@ -137,11 +216,55 @@ public class SeaScene : MonoBehaviour {
 		}
 
 		foreach (var obj in objectsToRemove) {
-			objects.Remove(obj);
+			objectsToBeDestroyed.Remove(obj);
 			Destroy(obj);
 		}
 
 		if (farthestObjectX < addObjectX)
 			AddObject(farthestObjectX);
+	}
+
+	// Collision detection method (for unity 2D).
+	void OnTriggerEnter2D(Collider2D collider) {
+		print ("collider: " + collider);
+		if (collider.gameObject.CompareTag ("NutNormal")) {
+			print ("Collided with normal nut.");
+			CollectNut(collider);
+		} else if (collider.gameObject.CompareTag ("Border")) {
+			print ("Collided with border.");
+			GetComponent<Rigidbody2D> ().velocity = new Vector2 (forwardSpeed, 0);
+		} else if (collider.gameObject.CompareTag ("Obstacle")) {
+			print ("Collided with obstacle.");
+		} else if (collider.gameObject.CompareTag ("Beat")) {
+			print ("Collided with beat.");
+			onBeat = true;
+		}
+	}
+
+	void OnTriggerExit2D(Collider2D collider) {
+		if (collider.gameObject.CompareTag ("Beat")) {
+			print ("Beat exit.");
+			onBeat = false;
+		}
+	}
+
+	void CollectNut(Collider2D nutCollider) {
+		nutsColleted++;
+
+		Destroy(nutCollider.gameObject);
+
+		AudioSource.PlayClipAtPoint(nutCollectSound, transform.position);
+
+		nutsColletedLabel.text = nutsColleted.ToString ();
+	}
+
+	public void RestartGame() {
+		//Application.LoadLevel (Application.loadedLevelName);
+		SceneManager.LoadScene (SceneManager.GetActiveScene ().name);
+	}
+
+	public void ExitToMenu() {
+		//Application.LoadLevel ("MenuScene");
+		SceneManager.LoadScene ("LevelScene");
 	}
 }
