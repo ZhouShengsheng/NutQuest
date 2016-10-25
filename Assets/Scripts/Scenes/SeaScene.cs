@@ -50,6 +50,12 @@ public class SeaScene : MonoBehaviour {
 	// Squirrel movements.
 	public float forwardSpeed = 3.0f;
 	public float upDownSpeed = 3.0f;
+	private float speedFactor = 1.0f;
+	public float speedUpFactor = 1.2f;
+	public float speedDownFactor = 0.8f;
+	public float speedChangeTimeout = 5;
+	private float _speedChangeTimeout;
+	private bool collidedBorder = false;
 	private bool upDown = true;			// true: up, false: down
 	private bool onBeat = false;		// Squirrel can only change direction on beat.
 	private float hitFrozenTime = 0;	// When hit by obstacle, this time is set to 3.
@@ -181,6 +187,16 @@ public class SeaScene : MonoBehaviour {
 
 	}
 
+	void updateSquirrelSpeed() {
+		Rigidbody2D body = GetComponent<Rigidbody2D> ();
+		if (collidedBorder) {
+			body.velocity = new Vector2 (forwardSpeed * speedFactor, 0);
+		} else {
+			float speed = upDown ? upDownSpeed : -upDownSpeed;
+			body.velocity = new Vector2 (forwardSpeed * speedFactor, speed * speedFactor);
+		}
+	}
+
 	/**
 	 * Move squirrel according to user inputs.
 	 */
@@ -191,8 +207,16 @@ public class SeaScene : MonoBehaviour {
 		if (tapped && onBeat) {
 			onBeat = false;
 			upDown = !upDown;
-			float speed = upDown ? upDownSpeed : -upDownSpeed;
-			GetComponent<Rigidbody2D> ().velocity = new Vector2 (forwardSpeed, speed);
+			collidedBorder = false;
+			updateSquirrelSpeed ();
+		}
+
+		if (_speedChangeTimeout > 0) {
+			_speedChangeTimeout -= Time.deltaTime;
+			if (_speedChangeTimeout <= 0) {
+				speedFactor = 1.0f;
+				updateSquirrelSpeed ();
+			}
 		}
 	}
 
@@ -213,7 +237,7 @@ public class SeaScene : MonoBehaviour {
 		}
 		for (int i = 0; i < number; i++) {
 			int randomThre = Random.Range (1, 101);
-			print ("randomThre: " + randomThre);
+			//			print ("randomThre: " + randomThre);
 			if (randomThre <= slowNutThre && totalNuts <= 0) {
 				return;
 			}
@@ -239,7 +263,6 @@ public class SeaScene : MonoBehaviour {
 				totalNuts--;
 			}
 
-
 			float objY;
 			if (randomThre > slowNutThre) {
 				// Put birds in the air and seaweeds in the water.
@@ -252,7 +275,7 @@ public class SeaScene : MonoBehaviour {
 				objY = Random.Range(objectsMinY, objectsMaxY);
 			}
 
-			newObj.transform.position = new Vector3(addX,objY,0); 
+			newObj.transform.position = new Vector2(addX,objY); 
 			objects.Add(newObj);
 		}
 	}
@@ -277,24 +300,25 @@ public class SeaScene : MonoBehaviour {
 
 	// Collision detection method (for unity 2D).
 	void OnTriggerEnter2D(Collider2D collider) {
-//		print ("collider: " + collider);
+		//		print ("collider: " + collider);
 		if (collider.gameObject.tag.StartsWith ("Nut")) {
-//			print ("Collided with normal nut.");
+			//			print ("Collided with normal nut.");
 			collectNut(collider, collider.gameObject.tag);
 		} else if (collider.gameObject.CompareTag ("Border")) {
-//			print ("Collided with border.");
-			GetComponent<Rigidbody2D> ().velocity = new Vector2 (forwardSpeed, 0);
+			//			print ("Collided with border.");
+			collidedBorder = true;
+			updateSquirrelSpeed ();
 		} else if (collider.gameObject.tag.StartsWith("Obstacle")) {
 			hitObstacle ();
 		} else if (collider.gameObject.CompareTag ("Beat")) {
-//			print ("Collided with beat.");
+			//			print ("Collided with beat.");
 			onBeat = true;
 		}
 	}
 
 	void OnTriggerExit2D(Collider2D collider) {
 		if (collider.gameObject.CompareTag ("Beat")) {
-//			print ("Beat exit.");
+			//			print ("Beat exit.");
 			onBeat = false;
 		}
 	}
@@ -303,7 +327,7 @@ public class SeaScene : MonoBehaviour {
 	 * Hit by obstacle.
 	 */
 	void hitObstacle() {
-//		print ("Collided with obstacle.");
+		//		print ("Collided with obstacle.");
 		if (hitFrozenTime > 0) {	// Currently frozen.
 			return;
 		}
@@ -324,6 +348,30 @@ public class SeaScene : MonoBehaviour {
 		Destroy(nutCollider.gameObject);
 		AudioSource.PlayClipAtPoint(nutCollectSound, transform.position);
 		updateNutsCollectedlabel ();
+		//		print ("nutTag: " + nutTag);
+		if (nutTag.Equals ("NutFast")) {
+			if (speedFactor == speedUpFactor) {
+				return;
+			}
+			if (speedFactor == speedDownFactor) {
+				speedFactor = 1.0f;
+			} else {
+				speedFactor = speedUpFactor;
+			}
+			_speedChangeTimeout = speedChangeTimeout;
+			updateSquirrelSpeed ();
+		} else if (nutTag.Equals ("NutSlow")) {
+			if (speedFactor == speedDownFactor) {
+				return;
+			}
+			if (speedFactor == speedUpFactor) {
+				speedFactor = 1.0f;
+			} else {
+				speedFactor = speedDownFactor;
+			}
+			_speedChangeTimeout = speedChangeTimeout;
+			updateSquirrelSpeed ();
+		}
 	}
 
 	void updateNutsCollectedlabel() {
