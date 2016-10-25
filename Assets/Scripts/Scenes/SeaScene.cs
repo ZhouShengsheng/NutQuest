@@ -6,6 +6,33 @@ using System.Collections.Generic;
 
 public class SeaScene : MonoBehaviour {
 
+	// Screen.
+	private float screenHeightInPoints;
+	private float screenWidthInPoints;
+
+	// Sea.
+	public List<GameObject> seas;
+	private float seaWidth = 0;
+
+	// Beat.
+	public GameObject beatPrefab;
+	private List<GameObject> beats;
+	public float beatOffset = 5;	// Offset between first beat and left border.
+	public float beatInterval = 2;	// Interval between two beats.
+	private int beatCountsPerSea;	// Equals seaWidth/beatInterval.
+
+	// Nuts and obstacles.
+	public GameObject[] nutPrefabs;
+	public GameObject[] obstaclePrefabs;
+	public List<GameObject> objects;
+	public float objectsMinY = -0.6f;
+	public float objectsMaxY = 0.6f;
+
+	// Nuts.
+	private int nutsColleted = 0;
+	public Text nutsColletedLabel;
+	public AudioClip nutCollectSound;
+
 	// Total nut number and obstacle number.
 	public int totalNuts = 120;
 	public int totalObstacles = 30;
@@ -20,49 +47,26 @@ public class SeaScene : MonoBehaviour {
 	private int slowNutThre;
 	private int obstacleThre;
 
-	// Screen.
-	private float screenHeightInPoints;
-	private float screenWidthInPoints;
-
-	// Sea.
-	public List<GameObject> seas;
-	private float seaWidth = 0;
-
-	public GameObject[] nutPrefabs;
-	public GameObject[] obstaclePrefabs;
-
-	// Beat.
-	public GameObject beatPrefab;
-	private List<GameObject> beats;
-	public float beatOffset = 5;	// Offset between first beat and left border.
-	public float beatInterval = 2;	// Interval between two beats.
-	private int beatCountsPerSea;	// Equals seaWidth/beatInterval.
-
-	// Nuts and obstacles.
-	public List<GameObject> objects;
-
-	public float objectsMinDistance = 5.0f;    
-	public float objectsMaxDistance = 10.0f;
-
-	public float objectsMinY = -1.4f;
-	public float objectsMaxY = 1.4f;
-
 	// Squirrel movements.
 	public float forwardSpeed = 3.0f;
 	public float upDownSpeed = 3.0f;
-	private bool upDown = true;	// true: up, false: down
-	private bool onBeat = false;	// Squirrel can only change direction on beat.
-
-	// Nuts.
-	private uint nutsColleted = 0;
-	public Text nutsColletedLabel;
-	public AudioClip nutCollectSound;
-
-	// Animation.
+	private bool upDown = true;			// true: up, false: down
+	private bool onBeat = false;		// Squirrel can only change direction on beat.
+	private float hitFrozonTime = 0;	// When hit by obstacle, this time is set to 3.
 	Animator squirrelAnimator;
 
 	// Controller.
 	public GameObject restartDialog;
+	private bool isGameOver = false;
+	public static int bronzeLevelNuts = 60;
+	public static int silverLevelNuts = 80;
+	public static int goldenLevelNuts = 100;
+
+	// Sprites.
+	public Sprite medalGoldenImg;
+	public Sprite medalSilverImg;
+	public Sprite medalBronzeImg;
+	public Sprite medalNoneImg;
 
 
 	// Use this for initialization
@@ -90,10 +94,27 @@ public class SeaScene : MonoBehaviour {
 
 	void FixedUpdate () {
 		moveSea();
+		if (isGameOver) {
+			return;
+		}
+		if (checkIfGameOver()) {
+			gameOver ();
+			isGameOver = true;
+		}
 	}
 
 	void Update () {
-		moveSquirrel ();
+		if (isGameOver) {
+			return;
+		}
+		if (hitFrozonTime <= 0) {
+			moveSquirrel ();
+		} else {
+			hitFrozonTime -= Time.deltaTime;
+			if (hitFrozonTime <= 0) {
+				squirrelAnimator.SetBool ("hit", false);
+			}
+		}
 	}
 
 	/**
@@ -159,6 +180,9 @@ public class SeaScene : MonoBehaviour {
 
 	}
 
+	/**
+	 * Move squirrel according to user inputs.
+	 */
 	void moveSquirrel() {
 		// Get is tapped.
 		bool tapped = Input.GetButtonUp("Fire1");
@@ -171,28 +195,63 @@ public class SeaScene : MonoBehaviour {
 		}
 	}
 
+	/**
+	 * Add nuts or obstacles on the beat.
+	 */
 	void addObjects(GameObject beat) {
 		float addX = beat.transform.position.x;
-		int number = Random.Range (0, 4);
+		int number = Random.Range (1, 16);
+		if (number <= 8) {
+			number = 1;
+		} else if (number <= 12) {
+			number = 2;
+		} else if (number <= 14) {
+			number = 3;
+		} else {
+			number = 0;
+		}
 		for (int i = 0; i < number; i++) {
 			int randomThre = Random.Range (1, 101);
+			print ("randomThre: " + randomThre);
+			if (randomThre <= slowNutThre && totalNuts <= 0) {
+				return;
+			}
+			if (randomThre <= obstacleThre && totalObstacles <= 0) {
+				return;
+			}
 			GameObject newObj = null;
 			if (randomThre <= normalNutThre) {
 				newObj = (GameObject)Instantiate (nutPrefabs [0]);
+				totalNuts--;
 			} else if (randomThre <= fastNutThre) {
 				newObj = (GameObject)Instantiate (nutPrefabs [1]);
+				totalNuts--;
 			} else if (randomThre <= slowNutThre) {
 				newObj = (GameObject)Instantiate (nutPrefabs [2]);
+				totalNuts--;
 			} else if (randomThre <= obstacleThre) {
 				int randomIndex = Random.Range (0, obstaclePrefabs.Length);
 				newObj = (GameObject)Instantiate (obstaclePrefabs [randomIndex]);
+				totalObstacles--;
 			} else {
 				newObj = (GameObject)Instantiate (nutPrefabs [0]);
+				totalNuts--;
 			}
 
-			float randomY = Random.Range(objectsMinY, objectsMaxY);
-			newObj.transform.position = new Vector3(addX,randomY,0); 
 
+			float objY;
+			if (randomThre > slowNutThre) {
+				// Put birds in the air and seaweeds in the water.
+				if (newObj.CompareTag ("ObstacleBird")) {
+					objY = Random.Range (0, objectsMaxY);
+				} else {
+					objY = Random.Range (objectsMinY, 0);
+				}
+			} else {
+				objY = Random.Range(objectsMinY, objectsMaxY);
+			}
+
+			newObj.transform.position = new Vector3(addX,objY,0); 
 			objects.Add(newObj);
 		}
 	}
@@ -217,45 +276,108 @@ public class SeaScene : MonoBehaviour {
 
 	// Collision detection method (for unity 2D).
 	void OnTriggerEnter2D(Collider2D collider) {
-		print ("collider: " + collider);
-		if (collider.gameObject.CompareTag ("NutNormal")) {
-			print ("Collided with normal nut.");
-			CollectNut(collider);
+//		print ("collider: " + collider);
+		if (collider.gameObject.tag.StartsWith ("Nut")) {
+//			print ("Collided with normal nut.");
+			collectNut(collider, collider.gameObject.tag);
 		} else if (collider.gameObject.CompareTag ("Border")) {
-			print ("Collided with border.");
+//			print ("Collided with border.");
 			GetComponent<Rigidbody2D> ().velocity = new Vector2 (forwardSpeed, 0);
-		} else if (collider.gameObject.CompareTag ("Obstacle")) {
-			print ("Collided with obstacle.");
+		} else if (collider.gameObject.tag.StartsWith("Obstacle")) {
+			hitObstacle ();
 		} else if (collider.gameObject.CompareTag ("Beat")) {
-			print ("Collided with beat.");
+//			print ("Collided with beat.");
 			onBeat = true;
 		}
 	}
 
 	void OnTriggerExit2D(Collider2D collider) {
 		if (collider.gameObject.CompareTag ("Beat")) {
-			print ("Beat exit.");
+//			print ("Beat exit.");
 			onBeat = false;
 		}
 	}
 
-	void CollectNut(Collider2D nutCollider) {
+	/**
+	 * Hit by obstacle.
+	 */
+	void hitObstacle() {
+//		print ("Collided with obstacle.");
+		squirrelAnimator.SetBool ("hit", true);
+		hitFrozonTime = 3;
+		nutsColleted -= 3;
+		if (nutsColleted < 0) {
+			nutsColleted = 0;
+		}
+		updateNutsCollectedlabel ();
+	}
+
+	/**
+	 * 	Collect nut.
+	 */
+	void collectNut(Collider2D nutCollider, string nutTag) {
 		nutsColleted++;
-
 		Destroy(nutCollider.gameObject);
-
 		AudioSource.PlayClipAtPoint(nutCollectSound, transform.position);
+		updateNutsCollectedlabel ();
+	}
 
+	void updateNutsCollectedlabel() {
 		nutsColletedLabel.text = nutsColleted.ToString ();
 	}
 
-	public void RestartGame() {
-		//Application.LoadLevel (Application.loadedLevelName);
+	/**
+	 * 	Check if the game can be over now.
+	 */
+	bool checkIfGameOver() {
+		bool isGameOver = true;
+		if (totalNuts <= 0) {
+			int count = objects.Count;
+			for (int i = 0; i < count; i++) {
+				GameObject obj = objects [i];
+				if (obj.tag.StartsWith ("Nut")) {
+					isGameOver = false;
+				}
+			}
+		} else {
+			isGameOver = false;
+		}
+		return isGameOver;
+	}
+
+	/**
+	 * 	Game over here. Display restart dialog.
+	 */
+	void gameOver() {
+		Text txtPoints = restartDialog.transform.Find ("Txt_Points").gameObject.GetComponent<Text>();
+		if (nutsColleted <= 1) {
+			txtPoints.text = string.Format ("{0} nut collected.", nutsColleted);
+		} else {
+			txtPoints.text = string.Format ("{0} nuts collected.", nutsColleted);
+		}
+		Text txtTitle = restartDialog.transform.Find ("Txt_Title").gameObject.GetComponent<Text>();
+		Image imgMedal = restartDialog.transform.Find ("Img_Medal").gameObject.GetComponent<Image>();
+		if (nutsColleted < bronzeLevelNuts) {
+			txtTitle.text = "Challenge failed...";
+			imgMedal.sprite = medalNoneImg;
+		} else {
+			txtTitle.text = "Level completed!";
+			if (nutsColleted >= goldenLevelNuts) {	// Golden.
+				imgMedal.sprite = medalGoldenImg;
+			} else if (nutsColleted >= silverLevelNuts) {	// Silver.
+				imgMedal.sprite = medalSilverImg;
+			} else if (nutsColleted >= bronzeLevelNuts) {	// Bronze.
+				imgMedal.sprite = medalBronzeImg;
+			}
+		}
+		restartDialog.SetActive (true);
+	}
+
+	public void restartGame() {
 		SceneManager.LoadScene (SceneManager.GetActiveScene ().name);
 	}
 
-	public void ExitToMenu() {
-		//Application.LoadLevel ("MenuScene");
+	public void exit() {
 		SceneManager.LoadScene ("LevelScene");
 	}
 }
