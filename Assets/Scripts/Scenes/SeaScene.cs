@@ -52,7 +52,7 @@ public class SeaScene : MonoBehaviour {
 	public float upDownSpeed = 3.0f;
 	private bool upDown = true;			// true: up, false: down
 	private bool onBeat = false;		// Squirrel can only change direction on beat.
-	private float hitFrozonTime = 0;	// When hit by obstacle, this time is set to 3.
+	private float hitFrozenTime = 0;	// When hit by obstacle, this time is set to 3.
 	Animator squirrelAnimator;
 
 	// Controller.
@@ -107,11 +107,12 @@ public class SeaScene : MonoBehaviour {
 		if (isGameOver) {
 			return;
 		}
-		if (hitFrozonTime <= 0) {
-			moveSquirrel ();
-		} else {
-			hitFrozonTime -= Time.deltaTime;
-			if (hitFrozonTime <= 0) {
+
+		moveSquirrel ();
+
+		if (hitFrozenTime > 0) {
+			hitFrozenTime -= Time.deltaTime;
+			if (hitFrozenTime <= 0) {
 				squirrelAnimator.SetBool ("hit", false);
 			}
 		}
@@ -216,7 +217,7 @@ public class SeaScene : MonoBehaviour {
 			if (randomThre <= slowNutThre && totalNuts <= 0) {
 				return;
 			}
-			if (randomThre <= obstacleThre && totalObstacles <= 0) {
+			if (randomThre > slowNutThre && randomThre <= obstacleThre && totalObstacles <= 0) {
 				return;
 			}
 			GameObject newObj = null;
@@ -303,8 +304,11 @@ public class SeaScene : MonoBehaviour {
 	 */
 	void hitObstacle() {
 //		print ("Collided with obstacle.");
+		if (hitFrozenTime > 0) {	// Currently frozen.
+			return;
+		}
 		squirrelAnimator.SetBool ("hit", true);
-		hitFrozonTime = 3;
+		hitFrozenTime = 3;
 		nutsColleted -= 3;
 		if (nutsColleted < 0) {
 			nutsColleted = 0;
@@ -330,19 +334,21 @@ public class SeaScene : MonoBehaviour {
 	 * 	Check if the game can be over now.
 	 */
 	bool checkIfGameOver() {
-		bool isGameOver = true;
+		bool over = true;
 		if (totalNuts <= 0) {
 			int count = objects.Count;
 			for (int i = 0; i < count; i++) {
 				GameObject obj = objects [i];
-				if (obj.tag.StartsWith ("Nut")) {
-					isGameOver = false;
+				if (obj == null) {
+					continue;
+				} else if (obj.tag.StartsWith ("Nut")) {
+					over = false;
 				}
 			}
 		} else {
-			isGameOver = false;
+			over = false;
 		}
-		return isGameOver;
+		return over;
 	}
 
 	/**
