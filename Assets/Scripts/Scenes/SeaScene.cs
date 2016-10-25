@@ -200,7 +200,7 @@ public class SeaScene : MonoBehaviour {
 			float speed = upDown ? upDownSpeed : -upDownSpeed;
 			body.velocity = new Vector2 (forwardSpeed * speedFactor, speed * speedFactor);
 		}
-		MusicManager.Instance.changeSpeed (speedFactor);
+			MusicManager.Instance.changeSpeed (speedFactor);
 	}
 
 	/**
@@ -274,6 +274,7 @@ public class SeaScene : MonoBehaviour {
 				// Put birds in the air and seaweeds in the water.
 				if (newObj.CompareTag ("ObstacleBird")) {
 					objY = Random.Range (0, objectsMaxY);
+					newObj.GetComponent<Rigidbody2D> ().velocity = new Vector2(-forwardSpeed, 0);
 				} else {
 					objY = Random.Range (objectsMinY, 0);
 				}

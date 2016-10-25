@@ -53,6 +53,8 @@ public class LevelScene : MonoBehaviour {
 			}
 
 			Image imgMedal = btnLevel.transform.Find ("Img_Medal").gameObject.GetComponent<Image>();
+			print ("imgMedal: " + imgMedal);
+			print ("l.points: " + l.points);
 			switch (l.points) {
 				case 0: {
 					imgMedal.sprite = medalNoneImg;

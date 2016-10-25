@@ -5,12 +5,10 @@ using System.Collections;
 public class SettingsManager : Singleton<SettingsManager> {
 
 	// Settings.
-	public bool isMute;
 	public float volume;
 	public int difficulty;
 
 	// UIs.
-	public Toggle muteToggle;
 	public Slider volumeSlider;
 	public Button[] difficultyButtons;
 
@@ -29,11 +27,9 @@ public class SettingsManager : Singleton<SettingsManager> {
 	 *	Load settings from player prefs and set UIs.
 	 */
 	private void init() {
-		isMute = PlayerPrefs.GetInt ("SettingsManager_isMute", 0) > 0;
 		volume = PlayerPrefs.GetFloat ("SettingsManager_volume", 1);
 		difficulty = PlayerPrefs.GetInt ("SettingsManager_difficulty", 0);
 
-		muteToggle.isOn = !isMute;
 		volumeSlider.value = volume;
 		OnDifficultyChanged (this.difficulty);
 	}
@@ -42,7 +38,6 @@ public class SettingsManager : Singleton<SettingsManager> {
 	 *	Save settings to player prefs.
 	 */
 	public void save() {
-		PlayerPrefs.SetInt ("SettingsManager_isMute", isMute ? 1 : 0);
 		PlayerPrefs.SetFloat ("SettingsManager_volume", volume);
 		PlayerPrefs.SetInt ("SettingsManager_difficulty", difficulty);
 	}
@@ -60,14 +55,6 @@ public class SettingsManager : Singleton<SettingsManager> {
 				text.color = Color.white;
 			}
 		}
-		save ();
-	}
-
-	/**
-	 *	Mute button tapped.
-	 */
-	public void OnMuteChanged() {
-		this.isMute = !muteToggle.isOn;
 		save ();
 	}
 
