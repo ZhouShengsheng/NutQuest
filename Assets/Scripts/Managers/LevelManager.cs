@@ -4,7 +4,7 @@ using System.Collections;
 public class LevelManager : Singleton<LevelManager> {
 
 	public Level[] seaLevels;
-	public Level[] foreastLevels;
+	public Level[] forestLevels;
 
 	public string currentDistrict = "Sea";
 	public int currentLevel = 0;
@@ -32,7 +32,7 @@ public class LevelManager : Singleton<LevelManager> {
 		}
 
 		// Foreast levels.
-		foreastLevels = new Level[5];
+		forestLevels = new Level[5];
 		for (int i = 0; i < levelCounts; i++) {
 			Level l = new Level ();
 			l.number = i + 1;
@@ -46,7 +46,7 @@ public class LevelManager : Singleton<LevelManager> {
 				l.unlocked = true;
 			}
 			l.points = PlayerPrefs.GetInt ("foreast_" + l.number + "_points", 0);
-			foreastLevels [i] = l;
+			forestLevels [i] = l;
 		}
 	}
 
@@ -60,7 +60,7 @@ public class LevelManager : Singleton<LevelManager> {
 
 		// Foreast levels.
 		for (int i = 0; i < levelCounts; i++) {
-			Level l = foreastLevels[i];
+			Level l = forestLevels[i];
 			PlayerPrefs.SetInt ("foreast_" + l.number + "_unlocked", l.unlocked ? 1 : 0);
 			PlayerPrefs.SetInt ("foreast_" + l.number + "_points", l.points);
 		}
@@ -74,7 +74,7 @@ public class LevelManager : Singleton<LevelManager> {
 		if (currentDistrict.Equals ("Sea")) {
 			level = seaLevels [currentLevel-1];
 		} else if (currentDistrict.Equals ("Foreast")) {
-			level = foreastLevels [currentLevel-1];
+			level = forestLevels [currentLevel-1];
 		} 
 		if (points > level.points) {
 			level.points = points;
@@ -83,7 +83,7 @@ public class LevelManager : Singleton<LevelManager> {
 				if (currentDistrict.Equals ("Sea")) {
 					nextLevel = seaLevels [currentLevel];
 				} else if (currentDistrict.Equals ("Foreast")) {
-					nextLevel = foreastLevels [currentLevel];
+					nextLevel = forestLevels [currentLevel];
 				}
 				nextLevel.unlocked = true;
 			}
@@ -98,7 +98,7 @@ public class LevelManager : Singleton<LevelManager> {
 		if (district.Equals ("Sea")) {
 			levels = seaLevels;
 		} else if (district.Equals ("Foreast")) {
-			levels = foreastLevels;
+			levels = forestLevels;
 		} else {
 			return 0;
 		}
@@ -114,7 +114,7 @@ public class LevelManager : Singleton<LevelManager> {
 		if (district.Equals ("Sea")) {
 			levels = seaLevels;
 		} else if (district.Equals ("Foreast")) {
-			levels = foreastLevels;
+			levels = forestLevels;
 		} else {
 			return 0;
 		}
@@ -132,7 +132,7 @@ public class LevelManager : Singleton<LevelManager> {
 		if (district.Equals ("Sea")) {
 			levels = seaLevels;
 		} else if (district.Equals ("Foreast")) {
-			levels = foreastLevels;
+			levels = forestLevels;
 		} else {
 			return 0;
 		}

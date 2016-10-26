@@ -7,10 +7,11 @@ public class SettingsManager : Singleton<SettingsManager> {
 	// Settings.
 	public float volume;
 	public int difficulty;
+	public bool beatIndicatorOn;
 
 	// UIs.
-	public Slider volumeSlider;
 	public Button[] difficultyButtons;
+	public Button[] beatIndicatorButtons;
 
 
 	void Start() {
@@ -29,9 +30,10 @@ public class SettingsManager : Singleton<SettingsManager> {
 	private void init() {
 		volume = PlayerPrefs.GetFloat ("SettingsManager_volume", 1);
 		difficulty = PlayerPrefs.GetInt ("SettingsManager_difficulty", 0);
+		beatIndicatorOn = PlayerPrefs.GetInt ("SettingsManager_beatIndicatorOn", 0) > 0;
 
-		volumeSlider.value = volume;
-		OnDifficultyChanged (this.difficulty);
+		onDifficultyChanged (difficulty);
+		onBeatIndicatorOnOffChanged (beatIndicatorOn);
 	}
 
 	/**
@@ -40,12 +42,13 @@ public class SettingsManager : Singleton<SettingsManager> {
 	public void save() {
 		PlayerPrefs.SetFloat ("SettingsManager_volume", volume);
 		PlayerPrefs.SetInt ("SettingsManager_difficulty", difficulty);
+		PlayerPrefs.SetInt ("SettingsManager_beatIndicatorOn", beatIndicatorOn ? 1 : 0);
 	}
 
 	/**
 	 *	Difficulty button tapped.
 	 */
-	public void OnDifficultyChanged(int difficulty) {
+	public void onDifficultyChanged(int difficulty) {
 		this.difficulty = difficulty;
 		for (int i = 0; i < difficultyButtons.Length; i++) {
 			Text text = difficultyButtons[i].GetComponentInChildren<Text> ();
@@ -58,11 +61,17 @@ public class SettingsManager : Singleton<SettingsManager> {
 		save ();
 	}
 
-	/**
-	 *	Volume slide slided.
-	 */
-	public void OnVolumeChanged() {
-		this.volume = volumeSlider.value;
+	public void onBeatIndicatorOnOffChanged(bool on) {
+		this.beatIndicatorOn = on;
+		Text textOn = beatIndicatorButtons [0].GetComponentInChildren<Text> ();
+		Text textOff = beatIndicatorButtons [1].GetComponentInChildren<Text> ();
+		if (on) {
+			textOn.color = Color.yellow;
+			textOff.color = Color.white;
+		} else {
+			textOn.color = Color.white;
+			textOff.color = Color.yellow;
+		}
 		save ();
 	}
 }

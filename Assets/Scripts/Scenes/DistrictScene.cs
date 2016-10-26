@@ -9,9 +9,9 @@ public class DistrictScene : MonoBehaviour {
 	public Text txtSeaPoints;
 	public Image[] imgSeaLevels;
 
-	public Button btnForeast;
-	public Text txtForeastPoints;
-	public Image[] imgForeastLevels;
+	public Button btnForest;
+	public Text txtForestPoints;
+	public Image[] imgForestLevels;
 
 	// Sprites.
 	public Sprite starFilledImg;
@@ -39,18 +39,18 @@ public class DistrictScene : MonoBehaviour {
 		changeLevelImages (imgSeaLevels, sea);
 		btnSea.onClick.AddListener (() => onDistrictTapped("Sea"));
 
-		District foreast = districtManager.foreastDistrict;
-		btnForeast.onClick.RemoveAllListeners ();
+		District foreast = districtManager.forestDistrict;
+		btnForest.onClick.RemoveAllListeners ();
 		if (foreast.unlocked) {
-			txtForeastPoints.text = string.Format ("{0} Points", foreast.points);
-			changeLevelImages (imgForeastLevels, foreast);
-			btnForeast.image.overrideSprite = polygonGreenImg;
-			btnForeast.onClick.AddListener (() => onDistrictTapped("Foreast"));
-			btnForeast.interactable = true;
+			txtForestPoints.text = string.Format ("{0} Points", foreast.points);
+			changeLevelImages (imgForestLevels, foreast);
+			btnForest.image.overrideSprite = polygonGreenImg;
+			btnForest.onClick.AddListener (() => onDistrictTapped("Foreast"));
+			btnForest.interactable = true;
 		} else {
-			txtForeastPoints.text = "Locked";
-			btnForeast.interactable = false;
-			btnForeast.image.overrideSprite = polygonGrayImg;
+			txtForestPoints.text = "Locked";
+			btnForest.interactable = false;
+			btnForest.image.overrideSprite = polygonGrayImg;
 		}
 	}
 

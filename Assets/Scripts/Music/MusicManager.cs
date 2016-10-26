@@ -44,10 +44,12 @@ public class MusicManager : MonoBehaviour {
 
 	public void playClip(AudioClip clip) {
 		audioSource.clip = clip;
+		audioSource.Play ();
 	}
 
 	public void playBgm() {
 		audioSource.clip = bgmClip;
+		audioSource.Play ();
 	}
 
 	public void pause() {

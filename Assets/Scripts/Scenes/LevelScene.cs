@@ -25,7 +25,7 @@ public class LevelScene : MonoBehaviour {
 				break;
 			}
 			case "Foreast": {
-				levels = levelManager.foreastLevels;
+				levels = levelManager.forestLevels;
 				break;
 			}
 			default: {
@@ -105,6 +105,10 @@ public class LevelScene : MonoBehaviour {
 
 	public void onLevelTapped(int level) {
 		LevelManager.Instance.currentLevel = level;
-		SceneManager.LoadScene ("SeaScene");
+		if (LevelManager.Instance.currentDistrict.Equals ("Sea")) {
+			SceneManager.LoadScene ("SeaScene");
+		} else if (LevelManager.Instance.currentDistrict.Equals ("Foreast")) {
+			SceneManager.LoadScene ("ForestScene");
+		}
 	}
 }

@@ -4,22 +4,26 @@ using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Collections.Generic;
 
-public class SeaScene : MonoBehaviour {
+public class GameScene : MonoBehaviour {
 
 	// Screen.
 	private float screenHeightInPoints;
 	private float screenWidthInPoints;
 
-	// Sea.
-	public List<GameObject> seas;
-	private float seaWidth = 0;
+	// Bg.
+	public List<GameObject> bgs;
+	private float bgWidth = 0;
+	public AudioClip seaBgm;
+	public AudioClip forestBgm;
 
 	// Beat.
-	public GameObject beatPrefab;
+	public GameObject beatWithIndicatorPrefab;
+	public GameObject beatNoIndicatorPrefab;
+	private GameObject beatPrefab;
 	private List<GameObject> beats;
 	public float beatOffset = 5;	// Offset between first beat and left border.
 	public float beatInterval = 2;	// Interval between two beats.
-	private int beatCountsPerSea;	// Equals seaWidth/beatInterval.
+	private int beatCountsPerBg;	// Equals bgWidth/beatInterval + 1.
 
 	// Nuts and obstacles.
 	public GameObject[] nutPrefabs;
@@ -31,7 +35,9 @@ public class SeaScene : MonoBehaviour {
 	// Nuts.
 	private int nutsColleted = 0;
 	public Text nutsColletedLabel;
-	public AudioClip nutCollectSound;
+	public AudioClip nutNormalCollectSound;
+	public AudioClip nutFastCollectSound;
+	public AudioClip nutSlowCollectSound;
 
 	// Total nut number and obstacle number.
 	public int totalNuts = 120;
@@ -62,6 +68,7 @@ public class SeaScene : MonoBehaviour {
 	Animator squirrelAnimator;
 
 	// Controller.
+	private float difficultyFactor = 1.0f;
 	public GameObject pauseDialog;
 	private bool isGamePaused = false;
 	public GameObject restartDialog;
@@ -77,12 +84,35 @@ public class SeaScene : MonoBehaviour {
 	public Sprite medalNoneImg;
 
 
-	// Use this for initialization
+	// Intializations.
+
 	void Start () {
 		screenHeightInPoints = 2.0f * Camera.main.orthographicSize;
 		screenWidthInPoints = screenHeightInPoints * Camera.main.aspect;
 		print ("screenHeightInPoints: " + screenHeightInPoints);
 		print ("screenWidthInPoints: " + screenWidthInPoints);
+
+		setNuts ();
+		initSquirrelMovement ();
+		prepareBgm ();
+		prepareBeatPrefab ();
+	}
+
+	void setNuts() {
+		int difficulty = SettingsManager.Instance.difficulty;
+		int level = LevelManager.Instance.currentLevel;
+
+		difficultyFactor = (float)(1 + (level-1) * 0.1 + difficulty * 0.26);
+		print ("difficultyFactor: " + difficultyFactor);
+		MusicManager.Instance.changeSpeed (difficultyFactor);
+
+		totalNuts = (int)(totalNuts - (difficultyFactor-1)*(totalNuts/2));
+		totalObstacles = (int)(totalObstacles + (difficultyFactor-1)*(totalObstacles));
+
+		normalNutFreq *= (2 - difficultyFactor);
+		fastNutFreq *= difficultyFactor;
+		slowNutFreq *= (2 - difficultyFactor);
+		obstacleFreq = 1 - normalNutFreq - fastNutFreq - slowNutFreq;;
 
 		normalNutThre = (int)(normalNutFreq * 100) + 1;
 		fastNutThre = normalNutThre + (int)(fastNutFreq * 100) + 1;
@@ -92,18 +122,42 @@ public class SeaScene : MonoBehaviour {
 		print ("fastNutThre: " + fastNutThre);
 		print ("slowNutThre: " + slowNutThre);
 		print ("obstacleThre: " + obstacleThre);
+	}
 
+	void initSquirrelMovement() {
 		squirrelAnimator = GetComponent<Animator>();
 		pauseDialog.SetActive (false);
 		restartDialog.SetActive (false);
-
 		float speed = upDown ? upDownSpeed : -upDownSpeed;
 		GetComponent<Rigidbody2D> ().velocity = new Vector2 (forwardSpeed, speed);
 	}
 
+	void prepareBeatPrefab() {
+		if (SettingsManager.Instance.beatIndicatorOn) {
+			beatPrefab = beatWithIndicatorPrefab;
+		} else {
+			beatPrefab = beatNoIndicatorPrefab;
+		}
+	}
+
+	void prepareBgm() {
+		string district = LevelManager.Instance.currentDistrict;
+		if (district.Equals ("Sea")) {
+			MusicManager.Instance.playClip (seaBgm);
+			beatInterval = 2.40f;
+			beatOffset = -1.5f;
+		} else {
+			MusicManager.Instance.playClip (forestBgm);
+			beatInterval = 2.40f;
+			beatOffset = -1.5f;
+		}
+	}
+
+	// Updates.
+
 	void FixedUpdate () {
-		moveSea();
-		if (isGameOver) {
+		moveBg();
+		if (isGameOver || isGamePaused) {
 			return;
 		}
 		if (checkIfGameOver()) {
@@ -113,7 +167,7 @@ public class SeaScene : MonoBehaviour {
 	}
 
 	void Update () {
-		if (isGameOver) {
+		if (isGameOver || isGamePaused) {
 			return;
 		}
 
@@ -128,28 +182,28 @@ public class SeaScene : MonoBehaviour {
 	}
 
 	/**
-	 *	Move the left sea into right position whenever necessary.
+	 *	Move the left bg to right position whenever necessary.
 	 */
-	void moveSea() {
-		GameObject preSea = seas [0];
-		GameObject currentSea = seas [1];
-		if (seaWidth == 0) {
+	void moveBg() {
+		GameObject preSea = bgs [0];
+		GameObject currentSea = bgs [1];
+		if (bgWidth == 0) {
 			Transform floor = currentSea.transform.FindChild ("floor");
 			if (floor == null) {
 				return;
 			}
-			seaWidth = floor.localScale.x;
-			beatCountsPerSea = (int)(seaWidth / beatInterval);
-			print ("seaWidth: " + seaWidth);
-			print ("beatCountsPerScreen: " + beatCountsPerSea);
+			bgWidth = floor.localScale.x;
+			beatCountsPerBg = (int)(bgWidth / beatInterval) + 1;
+			print ("seaWidth: " + bgWidth);
+			print ("beatCountsPerScreen: " + beatCountsPerBg);
 			initBeats ();
 		}
-		float seaCenterX = currentSea.transform.position.x + seaWidth * 0.5f;
-		float seaRightX = currentSea.transform.position.x + seaWidth;
+		float seaCenterX = currentSea.transform.position.x + bgWidth * 0.5f;
+		float seaRightX = currentSea.transform.position.x + bgWidth;
 		if (transform.position.x > seaCenterX) {
-			preSea.transform.position = new Vector2(seaRightX + seaWidth, 0);
-			seas.Remove (preSea);
-			seas.Add (preSea);
+			preSea.transform.position = new Vector2(seaRightX + bgWidth, 0);
+			bgs.Remove (preSea);
+			bgs.Add (preSea);
 
 			moveBeats ();
 			removeObjects ();
@@ -158,19 +212,19 @@ public class SeaScene : MonoBehaviour {
 
 	void initBeats() {
 		beats = new List<GameObject> ();
-		int totalBeats = beatCountsPerSea * 3;
-		float rightSeaX = seas [2].transform.position.x;
+		int totalBeats = beatCountsPerBg * 3;
+		float rightSeaX = bgs [2].transform.position.x;
 		for (int i = 0; i < totalBeats; i++) {
 			GameObject beat = GameObject.Instantiate (beatPrefab);
 			beats.Add (beat);
 		}
-		for (int i = 0; i < beatCountsPerSea*2; i++) {
+		for (int i = 0; i < beatCountsPerBg*2; i++) {
 			GameObject beat = beats [i];
 			beat.transform.position = new Vector2(-(rightSeaX + i*beatInterval), 0);
 		}
-		for (int i = beatCountsPerSea*2; i < totalBeats; i++) {
+		for (int i = beatCountsPerBg*2; i < totalBeats; i++) {
 			GameObject beat = beats [i];
-			beat.transform.position = new Vector2(rightSeaX + (i - beatCountsPerSea*2)*beatInterval, 0);
+			beat.transform.position = new Vector2(rightSeaX + (i - beatCountsPerBg*2)*beatInterval + beatOffset, 0);
 			addObjects (beat);
 		}
 	}
@@ -180,7 +234,7 @@ public class SeaScene : MonoBehaviour {
 	 */
 	void moveBeats() {
 		float rightX = beats [beats.Count-1].transform.position.x;
-		for (int i = 0; i < beatCountsPerSea; i++) {
+		for (int i = 0; i < beatCountsPerBg; i++) {
 			GameObject beat = beats [0];
 			beat.transform.position = new Vector2(rightX + (i+1)*beatInterval, 0);
 			beats.RemoveAt(0);
@@ -195,12 +249,12 @@ public class SeaScene : MonoBehaviour {
 		if (isGamePaused) {
 			body.velocity = new Vector2 (0, 0);
 		} else if (collidedBorder) {
-			body.velocity = new Vector2 (forwardSpeed * speedFactor, 0);
+			body.velocity = new Vector2 (forwardSpeed * speedFactor * difficultyFactor, 0);
 		} else {
 			float speed = upDown ? upDownSpeed : -upDownSpeed;
-			body.velocity = new Vector2 (forwardSpeed * speedFactor, speed * speedFactor);
+			body.velocity = new Vector2 (forwardSpeed * speedFactor * difficultyFactor, speed * speedFactor * difficultyFactor);
 		}
-			MusicManager.Instance.changeSpeed (speedFactor);
+		MusicManager.Instance.changeSpeed (speedFactor * difficultyFactor);
 	}
 
 	/**
@@ -274,7 +328,7 @@ public class SeaScene : MonoBehaviour {
 				// Put birds in the air and seaweeds in the water.
 				if (newObj.CompareTag ("ObstacleBird")) {
 					objY = Random.Range (0, objectsMaxY);
-					newObj.GetComponent<Rigidbody2D> ().velocity = new Vector2(-forwardSpeed, 0);
+					newObj.GetComponent<Rigidbody2D> ().velocity = new Vector2(-forwardSpeed * difficultyFactor, 0);
 				} else {
 					objY = Random.Range (objectsMinY, 0);
 				}
@@ -291,7 +345,7 @@ public class SeaScene : MonoBehaviour {
 	 * 	Remove left objects.
 	 */
 	void removeObjects() {
-		float leftSeaX = seas [0].transform.position.x;
+		float leftSeaX = bgs [0].transform.position.x;
 
 		int totalCount = objects.Count;
 		for (int i = 0; i < totalCount; i++) {
@@ -325,7 +379,7 @@ public class SeaScene : MonoBehaviour {
 
 	void OnTriggerExit2D(Collider2D collider) {
 		if (collider.gameObject.CompareTag ("Beat")) {
-			//			print ("Beat exit.");
+//			print ("Beat exit.");
 			onBeat = false;
 		}
 	}
@@ -334,7 +388,7 @@ public class SeaScene : MonoBehaviour {
 	 * Hit by obstacle.
 	 */
 	void hitObstacle() {
-		//		print ("Collided with obstacle.");
+//		print ("Collided with obstacle.");
 		if (hitFrozenTime > 0) {	// Currently frozen.
 			return;
 		}
@@ -353,9 +407,8 @@ public class SeaScene : MonoBehaviour {
 	void collectNut(Collider2D nutCollider, string nutTag) {
 		nutsColleted++;
 		Destroy(nutCollider.gameObject);
-		AudioSource.PlayClipAtPoint(nutCollectSound, transform.position);
 		updateNutsCollectedlabel ();
-//		print ("nutTag: " + nutTag);
+		AudioClip clip;
 		if (nutTag.Equals ("NutFast")) {
 			if (speedFactor == speedUpFactor) {
 				return;
@@ -367,6 +420,7 @@ public class SeaScene : MonoBehaviour {
 			}
 			_speedChangeTimeout = speedChangeTimeout;
 			updateSquirrelSpeed ();
+			clip = nutFastCollectSound;
 		} else if (nutTag.Equals ("NutSlow")) {
 			if (speedFactor == speedDownFactor) {
 				return;
@@ -378,7 +432,11 @@ public class SeaScene : MonoBehaviour {
 			}
 			_speedChangeTimeout = speedChangeTimeout;
 			updateSquirrelSpeed ();
+			clip = nutSlowCollectSound;
+		} else {
+			clip = nutNormalCollectSound;
 		}
+		AudioSource.PlayClipAtPoint(clip, transform.position);
 	}
 
 	void updateNutsCollectedlabel() {
@@ -390,6 +448,14 @@ public class SeaScene : MonoBehaviour {
 		updateSquirrelSpeed ();
 		pauseDialog.SetActive (true);
 		MusicManager.Instance.pause ();
+
+		// Pause birds.
+		for (int i = 0; i < objects.Count; i++) {
+			GameObject obj = objects [i];
+			if (obj != null && obj.CompareTag("ObstacleBird")) {
+				obj.GetComponent<Rigidbody2D> ().velocity = new Vector2 (0, 0);
+			}
+		}
 	}
 
 	public void resumeGame() {
@@ -397,6 +463,14 @@ public class SeaScene : MonoBehaviour {
 		updateSquirrelSpeed ();
 		pauseDialog.SetActive (false);
 		MusicManager.Instance.resume ();
+
+		// Resume birds.
+		for (int i = 0; i < objects.Count; i++) {
+			GameObject obj = objects [i];
+			if (obj.CompareTag("ObstacleBird")) {
+				obj.GetComponent<Rigidbody2D> ().velocity = new Vector2(-forwardSpeed * difficultyFactor, 0);
+			}
+		}
 	}
 
 	/**
@@ -453,7 +527,7 @@ public class SeaScene : MonoBehaviour {
 
 	public void restartGame() {
 		SceneManager.LoadScene (SceneManager.GetActiveScene ().name);
-		MusicManager.Instance.changeSpeed (1);
+		MusicManager.Instance.changeSpeed (1 * difficultyFactor);
 		MusicManager.Instance.resume ();
 	}
 
@@ -461,5 +535,6 @@ public class SeaScene : MonoBehaviour {
 		SceneManager.LoadScene ("LevelScene");
 		MusicManager.Instance.changeSpeed (1);
 		MusicManager.Instance.resume ();
+		MusicManager.Instance.playBgm ();
 	}
 }
