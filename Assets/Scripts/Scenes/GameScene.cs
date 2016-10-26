@@ -148,7 +148,7 @@ public class GameScene : MonoBehaviour {
 			beatOffset = -1.5f;
 		} else {
 			MusicManager.Instance.playClip (forestBgm);
-			beatInterval = 2.40f;
+			beatInterval = 1.97f;
 			beatOffset = -1.5f;
 		}
 	}
@@ -410,6 +410,7 @@ public class GameScene : MonoBehaviour {
 		updateNutsCollectedlabel ();
 		AudioClip clip;
 		if (nutTag.Equals ("NutFast")) {
+			_speedChangeTimeout = speedChangeTimeout;
 			if (speedFactor == speedUpFactor) {
 				return;
 			}
@@ -418,10 +419,10 @@ public class GameScene : MonoBehaviour {
 			} else {
 				speedFactor = speedUpFactor;
 			}
-			_speedChangeTimeout = speedChangeTimeout;
 			updateSquirrelSpeed ();
 			clip = nutFastCollectSound;
 		} else if (nutTag.Equals ("NutSlow")) {
+			_speedChangeTimeout = speedChangeTimeout;
 			if (speedFactor == speedDownFactor) {
 				return;
 			}
@@ -430,7 +431,6 @@ public class GameScene : MonoBehaviour {
 			} else {
 				speedFactor = speedDownFactor;
 			}
-			_speedChangeTimeout = speedChangeTimeout;
 			updateSquirrelSpeed ();
 			clip = nutSlowCollectSound;
 		} else {
