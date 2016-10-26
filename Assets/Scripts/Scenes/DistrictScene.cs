@@ -23,7 +23,7 @@ public class DistrictScene : MonoBehaviour {
 	// Change level images according to district.
 	void changeLevelImages(Image[] imgLevels, District d) {
 		int i;
-		for (i = 0; i < d.unlockedLevels; i++) {
+		for (i = 0; i < d.starCount; i++) {
 			imgLevels [i].sprite = starFilledImg;
 		}
 		for (; i < 5; i++) {

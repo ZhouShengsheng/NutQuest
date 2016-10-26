@@ -15,7 +15,7 @@ public class DistrictManager : Singleton<DistrictManager> {
 	private void load() {
 		seaDistrict = new District ();
 		seaDistrict.name = "Sea";
-		seaDistrict.unlocked = PlayerPrefs.GetInt ("sea_unlocked", 0) > 0;
+		seaDistrict.unlocked = true;
 		seaDistrict.starCount = PlayerPrefs.GetInt ("sea_starCount", 0);
 		seaDistrict.points = PlayerPrefs.GetInt ("sea_points", 0);
 
@@ -27,7 +27,6 @@ public class DistrictManager : Singleton<DistrictManager> {
 	}
 
 	private void save() {
-		PlayerPrefs.SetInt ("sea_unlocked", seaDistrict.unlocked ? 1 : 0);
 		PlayerPrefs.SetInt ("sea_starCount", seaDistrict.starCount);
 		PlayerPrefs.SetInt ("sea_points", seaDistrict.points);
 
