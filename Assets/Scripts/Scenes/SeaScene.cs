@@ -208,7 +208,7 @@ public class SeaScene : MonoBehaviour {
 	 */
 	void moveSquirrel() {
 		// Get is tapped.
-		bool tapped = Input.GetButtonUp("Fire1");
+		bool tapped = Input.GetButtonDown("Fire1");
 
 		if (tapped && onBeat) {
 			onBeat = false;

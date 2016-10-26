@@ -5,7 +5,7 @@ public class District {
 
 	public string name;
 	public bool unlocked;
-	public int unlockedLevels;
+	public int starCount;
 	public int points;
 
 }

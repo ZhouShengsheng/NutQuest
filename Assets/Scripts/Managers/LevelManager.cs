@@ -89,7 +89,7 @@ public class LevelManager : Singleton<LevelManager> {
 			}
 			save ();
 			DistrictManager.Instance.levelCompleted (currentDistrict, 
-				totalPointsForDistrict(currentDistrict), totalUnlockedLevelsForDistrict(currentDistrict));
+				totalPointsForDistrict(currentDistrict), totalStarCountForDistrict(currentDistrict));
 		}
 	}
 
@@ -107,6 +107,24 @@ public class LevelManager : Singleton<LevelManager> {
 			totalPoints += levels [i].points;
 		}
 		return totalPoints;
+	}
+
+	public int totalStarCountForDistrict(string district) {
+		Level[] levels = null;
+		if (district.Equals ("Sea")) {
+			levels = seaLevels;
+		} else if (district.Equals ("Foreast")) {
+			levels = foreastLevels;
+		} else {
+			return 0;
+		}
+		int totalStarCount = 0;
+		for (int i = 0; i < levelCounts; i++) {
+			if (levels [i].points > 0) {
+				totalStarCount++;
+			}
+		}
+		return totalStarCount;
 	}
 
 	public int totalUnlockedLevelsForDistrict(string district) {
